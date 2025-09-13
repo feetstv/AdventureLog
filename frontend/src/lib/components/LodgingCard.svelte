@@ -74,7 +74,7 @@
 			<div class="avatar">
 				<div class="w-12 h-12 rounded-full ring-1 ring-base-200 overflow-hidden">
 					{#if lodging.images && lodging.images.length > 0}
-						<img src={lodging.images[0]} alt={lodging.name} class="object-cover w-12 h-12" />
+						<img src={lodging.images[0].image} alt={lodging.name} class="object-cover w-12 h-12" />
 					{:else}
 						<div class="w-12 h-12 flex items-center justify-center text-xl bg-base-200">{getLodgingIcon(lodging.type)}</div>
 					{/if}

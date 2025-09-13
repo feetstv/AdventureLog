@@ -129,7 +129,7 @@
 			<div class="avatar">
 				<div class="w-12 h-12 rounded-full ring-1 ring-base-200 overflow-hidden">
 					{#if adventure.images && adventure.images.length > 0}
-						<img src={adventure.images[0]} alt={adventure.name} class="object-cover w-12 h-12" />
+						<img src={adventure.images[0].image} alt={adventure.name} class="object-cover w-12 h-12" />
 					{:else}
 						<div class="w-12 h-12 flex items-center justify-center text-xl bg-base-200">
 							{adventure.category?.icon || '📍'}
