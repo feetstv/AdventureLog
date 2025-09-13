@@ -10,7 +10,6 @@
 	import { formatDateInTimezone, isEntityOutsideCollectionDateRange } from '$lib/dateUtils';
 	import { formatAllDayDate } from '$lib/dateUtils';
 	import { isAllDay } from '$lib';
-	import CardCarousel from './CardCarousel.svelte';
 
 	const dispatch = createEventDispatcher();
 
@@ -67,120 +66,64 @@
 	/>
 {/if}
 
-<div
-	class="card w-full max-w-md bg-base-300 text-base-content shadow-2xl hover:shadow-3xl transition-all duration-300 border border-base-300 hover:border-primary/20 group"
->
-	<!-- Image Section with Overlay -->
-	<div class="relative overflow-hidden rounded-t-2xl">
-		<CardCarousel images={lodging.images} icon={getLodgingIcon(lodging.type)} name={lodging.name} />
-
-		<!-- Category Badge -->
-		{#if lodging.type}
-			<div class="absolute bottom-4 left-4">
-				<div class="badge badge-primary shadow-lg font-medium">
-					{$t(`lodging.${lodging.type}`)}
-					{getLodgingIcon(lodging.type)}
+<div class="card w-full max-w-md bg-base-300 text-base-content shadow-2xl transition-all duration-300 border border-base-300 hover:border-primary/20 group p-4">
+	<!-- Row 1: image | title/badges | detail -->
+	<div class="grid grid-cols-[auto,1fr,auto] items-center gap-3">
+		<!-- Small circular image/icon -->
+		<div class="flex items-center">
+			<div class="avatar">
+				<div class="w-12 h-12 rounded-full ring-1 ring-base-200 overflow-hidden">
+					{#if lodging.images && lodging.images.length > 0}
+						<img src={lodging.images[0]} alt={lodging.name} class="object-cover w-12 h-12" />
+					{:else}
+						<div class="w-12 h-12 flex items-center justify-center text-xl bg-base-200">{getLodgingIcon(lodging.type)}</div>
+					{/if}
 				</div>
 			</div>
-		{/if}
-	</div>
-	<div class="card-body p-6 space-y-4">
-		<!-- Header -->
-		<div class="flex flex-col gap-3">
-			<h2 class="text-xl font-bold break-words">{lodging.name}</h2>
-			<div class="flex flex-wrap gap-2">
-				<div class="badge badge-secondary">
-					{$t(`lodging.${lodging.type}`)}
-					{getLodgingIcon(lodging.type)}
-				</div>
+		</div>
+
+		<!-- Title + badges -->
+		<div class="col-span-1 col-start-2 text-left">
+			<h2 class="font-semibold truncate">{lodging.name}</h2>
+			<div class="mt-1 flex flex-wrap gap-1">
+				{#if lodging.type}
+					<div class="badge badge-sm badge-secondary">{$t(`lodging.${lodging.type}`)} {getLodgingIcon(lodging.type)}</div>
+				{/if}
 				{#if outsideCollectionRange}
-					<div class="badge badge-error">{$t('adventures.out_of_range')}</div>
+					<div class="badge badge-sm badge-error">{$t('adventures.out_of_range')}</div>
 				{/if}
 			</div>
 		</div>
 
-		<!-- Location Info -->
-		<div class="space-y-2">
-			{#if lodging.location}
-				<div class="flex items-center gap-2">
-					<span class="text-sm font-medium">{$t('adventures.location')}:</span>
-					<p class="text-sm break-words">{lodging.location}</p>
-				</div>
+		<!-- Single detail: check-in date/time -->
+		<div class="col-span-1 text-right text-sm">
+			{#if lodging.check_in}
+				<span>
+					{#if isAllDay(lodging.check_in)}
+						{formatAllDayDate(lodging.check_in)}
+					{:else}
+						{formatDateInTimezone(lodging.check_in, lodging.timezone)}
+						{#if lodging.timezone}
+							<span class="ml-1 text-xs opacity-60">({lodging.timezone})</span>
+						{/if}
+					{/if}
+				</span>
 			{/if}
-
-			<div class="space-y-3">
-				{#if lodging.check_in}
-					<div class="flex gap-2 text-sm">
-						<span class="font-medium whitespace-nowrap">{$t('adventures.check_in')}:</span>
-						<span>
-							{#if isAllDay(lodging.check_in)}
-								{formatAllDayDate(lodging.check_in)}
-							{:else}
-								{formatDateInTimezone(lodging.check_in, lodging.timezone)}
-								{#if lodging.timezone}
-									<span class="ml-1 text-xs opacity-60">({lodging.timezone})</span>
-								{/if}
-							{/if}
-						</span>
-					</div>
-				{/if}
-
-				{#if lodging.check_out}
-					<div class="flex gap-2 text-sm">
-						<span class="font-medium whitespace-nowrap">{$t('adventures.check_out')}:</span>
-						<span>
-							{#if isAllDay(lodging.check_out)}
-								{formatAllDayDate(lodging.check_out)}
-							{:else}
-								{formatDateInTimezone(lodging.check_out, lodging.timezone)}
-								{#if lodging.timezone}
-									<span class="ml-1 text-xs opacity-60">({lodging.timezone})</span>
-								{/if}
-							{/if}
-						</span>
-					</div>
-				{/if}
-			</div>
 		</div>
-
-		<!-- Reservation Info -->
-		{#if lodging.user == user?.uuid || (collection && user && collection.shared_with?.includes(user.uuid))}
-			<div class="space-y-2">
-				{#if lodging.reservation_number}
-					<div class="flex items-center gap-2">
-						<span class="text-sm font-medium">{$t('adventures.reservation_number')}:</span>
-						<p class="text-sm break-all">{lodging.reservation_number}</p>
-					</div>
-				{/if}
-				{#if lodging.price}
-					<div class="flex items-center gap-2">
-						<span class="text-sm font-medium">{$t('adventures.price')}:</span>
-						<p class="text-sm">{lodging.price}</p>
-					</div>
-				{/if}
-			</div>
-		{/if}
-
-		<!-- Actions -->
-		{#if lodging.user == user?.uuid || (collection && user && collection.shared_with?.includes(user.uuid))}
-			<div class="pt-4 border-t border-base-300 flex justify-end gap-2">
-				<button
-					class="btn btn-neutral btn-sm flex items-center gap-1"
-					on:click={editTransportation}
-					title={$t('transportation.edit')}
-				>
-					<FileDocumentEdit class="w-5 h-5" />
-					<span>{$t('transportation.edit')}</span>
-				</button>
-				<button
-					on:click={() => (isWarningModalOpen = true)}
-					class="btn btn-secondary btn-sm flex items-center gap-1"
-					title={$t('adventures.delete')}
-				>
-					<TrashCanOutline class="w-5 h-5" />
-					<span>{$t('adventures.delete')}</span>
-				</button>
-			</div>
-		{/if}
 	</div>
+
+	<!-- Row 2: actions -->
+	{#if lodging.user == user?.uuid || (collection && user && collection.shared_with?.includes(user.uuid))}
+		<div class="mt-3 pt-3 border-t border-base-300 flex items-center justify-between gap-2">
+			<button class="btn btn-neutral btn-sm flex items-center gap-1" on:click={editTransportation} title={$t('transportation.edit')}>
+				<FileDocumentEdit class="w-5 h-5" />
+				<span class="hidden sm:inline">{$t('transportation.edit')}</span>
+			</button>
+			<div class="flex-1"></div>
+			<button on:click={() => (isWarningModalOpen = true)} class="btn btn-secondary btn-sm flex items-center gap-1" title={$t('adventures.delete')}>
+				<TrashCanOutline class="w-5 h-5" />
+				<span class="hidden sm:inline">{$t('adventures.delete')}</span>
+			</button>
+		</div>
+	{/if}
 </div>

@@ -7,7 +7,6 @@
 
 	import Launch from '~icons/mdi/launch';
 	import TrashCan from '~icons/mdi/trash-can';
-	import Calendar from '~icons/mdi/calendar';
 	import DeleteWarning from './DeleteWarning.svelte';
 	import { isEntityOutsideCollectionDateRange } from '$lib/dateUtils';
 
@@ -51,54 +50,49 @@
 		on:confirm={deleteChecklist}
 	/>
 {/if}
-<div
-	class="card w-full max-w-md bg-base-300 text-base-content shadow-2xl hover:shadow-3xl transition-all duration-300 border border-base-300 hover:border-primary/20 group"
->
-	<div class="card-body p-6 space-y-4">
-		<!-- Header -->
-		<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-			<h2 class="text-xl font-bold break-words">{checklist.name}</h2>
-			<div class="flex flex-wrap gap-2">
-				<div class="badge badge-primary">{$t('adventures.checklist')}</div>
+<div class="card w-full max-w-md bg-base-300 text-base-content shadow-2xl transition-all duration-300 border border-base-300 hover:border-primary/20 group p-4">
+	<!-- Row 1: image | title/badges | detail -->
+	<div class="grid grid-cols-[auto,1fr,auto] items-center gap-3">
+		<!-- Small circular image/icon -->
+		<div class="flex items-center">
+			<div class="avatar">
+				<div class="w-12 h-12 rounded-full ring-1 ring-base-200 overflow-hidden">
+					<div class="w-12 h-12 flex items-center justify-center text-xl bg-base-200">📝</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Title + badges -->
+		<div class="col-span-1 col-start-2 text-left">
+			<h2 class="font-semibold truncate">{checklist.name}</h2>
+			<div class="mt-1 flex flex-wrap gap-1">
+				<div class="badge badge-sm badge-primary">{$t('adventures.checklist')}</div>
 				{#if outsideCollectionRange}
-					<div class="badge badge-error">{$t('adventures.out_of_range')}</div>
+					<div class="badge badge-sm badge-error">{$t('adventures.out_of_range')}</div>
 				{/if}
 			</div>
 		</div>
 
-		<!-- Checklist Stats -->
-		{#if checklist.items.length > 0}
-			<p class="text-sm">
-				{checklist.items.length}
-				{checklist.items.length > 1 ? $t('checklist.items') : $t('checklist.item')}
-			</p>
-		{/if}
-
-		<!-- Date -->
-		{#if checklist.date && checklist.date !== ''}
-			<div class="inline-flex items-center gap-2 text-sm">
-				<Calendar class="w-5 h-5 text-primary" />
-				<p>{new Date(checklist.date).toLocaleDateString(undefined, { timeZone: 'UTC' })}</p>
-			</div>
-		{/if}
-
-		<!-- Actions -->
-		<div class="pt-4 border-t border-base-300 flex justify-end gap-2">
-			<button class="btn btn-neutral btn-sm flex items-center gap-1" on:click={editChecklist}>
-				<Launch class="w-5 h-5" />
-				{$t('notes.open')}
-			</button>
-			{#if checklist.user == user?.uuid || (collection && user && collection.shared_with?.includes(user.uuid))}
-				<button
-					id="delete_adventure"
-					data-umami-event="Delete Checklist"
-					class="btn btn-secondary btn-sm flex items-center gap-1"
-					on:click={() => (isWarningModalOpen = true)}
-				>
-					<TrashCan class="w-5 h-5" />
-					{$t('adventures.delete')}
-				</button>
+		<!-- Single detail: number of items -->
+		<div class="col-span-1 text-right text-sm">
+			{#if checklist.items.length > 0}
+				<span>{checklist.items.length} {checklist.items.length > 1 ? $t('checklist.items') : $t('checklist.item')}</span>
 			{/if}
 		</div>
+	</div>
+
+	<!-- Row 2: actions -->
+	<div class="mt-3 pt-3 border-t border-base-300 flex items-center justify-between gap-2">
+		<button class="btn btn-neutral btn-sm flex items-center gap-1" on:click={editChecklist}>
+			<Launch class="w-5 h-5" />
+			<span class="hidden sm:inline">{$t('notes.open')}</span>
+		</button>
+		<div class="flex-1"></div>
+		{#if checklist.user == user?.uuid || (collection && user && collection.shared_with?.includes(user.uuid))}
+			<button id="delete_adventure" data-umami-event="Delete Checklist" class="btn btn-secondary btn-sm flex items-center gap-1" on:click={() => (isWarningModalOpen = true)}>
+				<TrashCan class="w-5 h-5" />
+				<span class="hidden sm:inline">{$t('adventures.delete')}</span>
+			</button>
+		{/if}
 	</div>
 </div>

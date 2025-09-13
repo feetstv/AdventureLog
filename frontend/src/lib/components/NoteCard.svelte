@@ -5,15 +5,8 @@
 	import { createEventDispatcher } from 'svelte';
 	const dispatch = createEventDispatcher();
 
-	import { marked } from 'marked'; // Import the markdown parser
-
-	const renderMarkdown = (markdown: string) => {
-		return marked(markdown);
-	};
-
 	import Launch from '~icons/mdi/launch';
 	import TrashCan from '~icons/mdi/trash-can';
-	import Calendar from '~icons/mdi/calendar';
 	import DeleteWarning from './DeleteWarning.svelte';
 	import { isEntityOutsideCollectionDateRange } from '$lib/dateUtils';
 
@@ -59,77 +52,45 @@
 	/>
 {/if}
 
-<div
-	class="card w-full max-w-md bg-base-300 text-base-content shadow-2xl hover:shadow-3xl transition-all duration-300 border border-base-300 hover:border-primary/20 group"
->
-	<div class="card-body p-6 space-y-4">
-		<!-- Header -->
-		<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-			<h2 class="text-xl font-bold break-words">{note.name}</h2>
-			<div class="flex flex-wrap gap-2">
-				<div class="badge badge-primary">{$t('adventures.note')}</div>
+<div class="card w-full max-w-md bg-base-300 text-base-content shadow-2xl transition-all duration-300 border border-base-300 hover:border-primary/20 group p-4">
+	<!-- Row 1: image | title/badges | detail (none) -->
+	<div class="grid grid-cols-[auto,1fr,auto] items-center gap-3">
+		<!-- Small circular image/icon -->
+		<div class="flex items-center">
+			<div class="avatar">
+				<div class="w-12 h-12 rounded-full ring-1 ring-base-200 overflow-hidden">
+					<div class="w-12 h-12 flex items-center justify-center text-xl bg-base-200">🗒️</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Title + badges -->
+		<div class="col-span-1 col-start-2 text-left">
+			<h2 class="font-semibold truncate">{note.name}</h2>
+			<div class="mt-1 flex flex-wrap gap-1">
+				<div class="badge badge-sm badge-primary">{$t('adventures.note')}</div>
 				{#if outsideCollectionRange}
-					<div class="badge badge-error">{$t('adventures.out_of_range')}</div>
+					<div class="badge badge-sm badge-error">{$t('adventures.out_of_range')}</div>
 				{/if}
 			</div>
 		</div>
 
-		<!-- Note Content -->
-		{#if note.content && note.content?.length > 0}
-			<article
-				class="prose overflow-auto max-h-72 max-w-full p-4 border border-base-300 bg-base-100 rounded-lg"
-			>
-				{@html renderMarkdown(note.content || '')}
-			</article>
-		{/if}
+		<!-- Detail column intentionally left blank for NoteCard -->
+		<div class="col-span-1"></div>
+	</div>
 
-		<!-- Links -->
-		{#if note.links && note.links?.length > 0}
-			<div class="space-y-1">
-				<p class="text-sm font-medium">
-					{note.links.length}
-					{note.links.length > 1 ? $t('adventures.links') : $t('adventures.link')}
-				</p>
-				<ul class="list-disc pl-5 text-sm">
-					{#each note.links.slice(0, 3) as link}
-						<li>
-							<a class="link link-primary" href={link} target="_blank" rel="noopener noreferrer">
-								{link.split('//')[1]?.split('/', 1)[0]}
-							</a>
-						</li>
-					{/each}
-					{#if note.links.length > 3}
-						<li>…</li>
-					{/if}
-				</ul>
-			</div>
-		{/if}
-
-		<!-- Date -->
-		{#if note.date && note.date !== ''}
-			<div class="inline-flex items-center gap-2 text-sm">
-				<Calendar class="w-5 h-5 text-primary" />
-				<p>{new Date(note.date).toLocaleDateString(undefined, { timeZone: 'UTC' })}</p>
-			</div>
-		{/if}
-
-		<!-- Actions -->
-		<div class="pt-4 border-t border-base-300 flex justify-end gap-2">
-			<button class="btn btn-neutral btn-sm flex items-center gap-1" on:click={editNote}>
-				<Launch class="w-5 h-5" />
-				{$t('notes.open')}
+	<!-- Row 2: actions -->
+	<div class="mt-3 pt-3 border-t border-base-300 flex items-center justify-between gap-2">
+		<button class="btn btn-neutral btn-sm flex items-center gap-1" on:click={editNote}>
+			<Launch class="w-5 h-5" />
+			<span class="hidden sm:inline">{$t('notes.open')}</span>
+		</button>
+		<div class="flex-1"></div>
+		{#if note.user == user?.uuid || (collection && user && collection.shared_with?.includes(user.uuid))}
+			<button id="delete_adventure" data-umami-event="Delete Adventure" class="btn btn-secondary btn-sm flex items-center gap-1" on:click={() => (isWarningModalOpen = true)}>
+				<TrashCan class="w-5 h-5" />
+				<span class="hidden sm:inline">{$t('adventures.delete')}</span>
 			</button>
-			{#if note.user == user?.uuid || (collection && user && collection.shared_with?.includes(user.uuid))}
-				<button
-					id="delete_adventure"
-					data-umami-event="Delete Adventure"
-					class="btn btn-secondary btn-sm flex items-center gap-1"
-					on:click={() => (isWarningModalOpen = true)}
-				>
-					<TrashCan class="w-5 h-5" />
-					{$t('adventures.delete')}
-				</button>
-			{/if}
-		</div>
+		{/if}
 	</div>
 </div>

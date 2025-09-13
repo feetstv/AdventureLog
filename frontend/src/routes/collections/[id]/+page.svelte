@@ -867,8 +867,8 @@
 			on:click={() => (isShowingNewTrip = true)}>Trip Planner</button
 		  > -->
 					</ul>
-				</div>
-			</div>
+                    </div>
+                </div>
 		</div>
 	{/if}
 	{#if collection.is_archived}
@@ -1092,9 +1092,33 @@
 								dateString
 							] || []}
 
+						<!-- Precompute middle-day context and badges (must be direct child of each) -->
+						{@const prevDateString = new Date(new Date(adjustedDate).setUTCDate(adjustedDate.getUTCDate() - 1)).toISOString().split('T')[0]}
+						{@const nextDateString = new Date(new Date(adjustedDate).setUTCDate(adjustedDate.getUTCDate() + 1)).toISOString().split('T')[0]}
+						{@const prevAdventures = groupLocationsByDate(adventures, new Date(collection.start_date), numberOfDays + 1)[prevDateString] || []}
+						{@const nextAdventures = groupLocationsByDate(adventures, new Date(collection.start_date), numberOfDays + 1)[nextDateString] || []}
+						{@const prevTransportations = groupTransportationsByDate(transportations, new Date(collection.start_date), numberOfDays + 1)[prevDateString] || []}
+						{@const nextTransportations = groupTransportationsByDate(transportations, new Date(collection.start_date), numberOfDays + 1)[nextDateString] || []}
+						{@const prevLodging = groupLodgingByDate(lodging, new Date(collection.start_date), numberOfDays + 1)[prevDateString] || []}
+						{@const nextLodging = groupLodgingByDate(lodging, new Date(collection.start_date), numberOfDays + 1)[nextDateString] || []}
+
+						{@const middleAdventureBadges = dayAdventures
+							.filter((a) => prevAdventures.some((p) => p.id === a.id) && nextAdventures.some((n) => n.id === a.id))
+							.map((a) => ({ href: `#card-adventure-${a.id}`, label: `${a.category?.icon || '📍'} ${a.name}` }))}
+						{@const middleTransportationBadges = dayTransportations
+							.filter((t) => prevTransportations.some((p) => p.id === t.id) && nextTransportations.some((n) => n.id === t.id))
+							.map((t) => ({ href: `#card-transportation-${t.id}`, label: `${getTransportationEmoji(t.type)} ${t.name}` }))}
+						{@const middleLodgingBadges = dayLodging
+							.filter((l) => prevLodging.some((p) => p.id === l.id) && nextLodging.some((n) => n.id === l.id))
+							.map((l) => ({ href: `#card-lodging-${l.id}`, label: `${getLodgingIcon(l.type)} ${l.name}` }))}
+
+						{@const dayBadges = [...middleAdventureBadges, ...middleTransportationBadges, ...middleLodgingBadges]}
+
+{@const hasFullCards = (dayAdventures.some((a) => !(prevAdventures.some((p) => p.id === a.id) && nextAdventures.some((n) => n.id === a.id))) || dayTransportations.some((t) => !(prevTransportations.some((p) => p.id === t.id) && nextTransportations.some((n) => n.id === t.id))) || dayLodging.some((l) => !(prevLodging.some((p) => p.id === l.id) && nextLodging.some((n) => n.id === l.id))) || dayNotes.length > 0 || dayChecklists.length > 0)}
+
 						<div class="card bg-base-100 shadow-xl my-8">
-							<div class="card-body bg-base-200">
-								<h2 class="card-title text-3xl justify-center g">
+								<div class="card-body bg-base-200 day-stack">
+									<h2 class="card-title text-3xl justify-start text-left">
 									{$t('adventures.day')}
 									{i + 1}
 									<div class="badge badge-lg">
@@ -1102,23 +1126,71 @@
 									</div>
 								</h2>
 
-								<div class="divider"></div>
+								<!-- Middle-day badges gathered under heading -->
 
-								<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+								{#if dayBadges.length > 0}
+									<div class="flex flex-wrap gap-2 mb-2 justify-start">
+										{#each dayBadges as b}
+											<a href={b.href} class="badge badge-outline">{b.label}</a>
+										{/each}
+									</div>
+								{/if}
+
+								<!-- hasFullCards is computed above as an immediate child -->
+
+								{#if hasFullCards}
+									<div class="divider"></div>
+								{/if}
+
+								<div class="flex flex-col gap-4">
+									{#if dayLodging.length > 0}
+											{#each dayLodging as hotel}
+											{@const lPrev = prevLodging.some((p) => p.id === hotel.id)}
+											{@const lNext = nextLodging.some((n) => n.id === hotel.id)}
+											{#if !(lPrev && lNext)}
+												<div id={!lPrev && lNext ? `card-lodging-${hotel.id}` : undefined} class="relative py-3 border-b border-base-300">
+													<button type="button" class="absolute inset-0 z-10" aria-label="Open Lodging" on:click={() => { lodgingToEdit = hotel; isShowingLodgingModal = true; }}></button>
+													<LodgingCard
+												lodging={hotel}
+												user={data?.user}
+												on:delete={(event) => {
+													lodging = lodging.filter((t) => t.id != event.detail);
+												}}
+												on:edit={editLodging}
+												{collection}
+												/>
+												</div>
+												<div class="divider"></div>
+											{/if}
+										{/each}
+									{/if}
 									{#if dayAdventures.length > 0}
 										{#each dayAdventures as adventure}
-											<LocationCard
+											{@const isPrev = prevAdventures.some((p) => p.id === adventure.id)}
+											{@const isNext = nextAdventures.some((n) => n.id === adventure.id)}
+											{#if !(isPrev && isNext)}
+												<div id={!isPrev && isNext ? `card-adventure-${adventure.id}` : undefined} class="relative">
+													<a class="absolute inset-0 z-10" href={`/locations/${adventure.id}`} aria-label="Open Adventure"></a>
+													<LocationCard readOnly
 												user={data.user}
 												on:edit={editAdventure}
 												on:delete={deleteAdventure}
 												{adventure}
 												{collection}
-											/>
+												/>
+												</div>
+												<div class="divider"></div>
+											{/if}
 										{/each}
 									{/if}
 									{#if dayTransportations.length > 0}
-										{#each dayTransportations as transportation}
-											<TransportationCard
+											{#each dayTransportations as transportation}
+											{@const tPrev = prevTransportations.some((p) => p.id === transportation.id)}
+											{@const tNext = nextTransportations.some((n) => n.id === transportation.id)}
+											{#if !(tPrev && tNext)}
+												<div id={!tPrev && tNext ? `card-transportation-${transportation.id}` : undefined} class="relative">
+													<button type="button" class="absolute inset-0 z-10" aria-label="Open Transportation" on:click={() => { transportationToEdit = transportation; isShowingTransportationModal = true; }}></button>
+													<TransportationCard
 												{transportation}
 												user={data?.user}
 												on:delete={(event) => {
@@ -1129,12 +1201,17 @@
 													isShowingTransportationModal = true;
 												}}
 												{collection}
-											/>
+												/>
+												</div>
+												<div class="divider"></div>
+											{/if}
 										{/each}
 									{/if}
 									{#if dayNotes.length > 0}
 										{#each dayNotes as note}
-											<NoteCard
+											<div class="relative py-3 border-b border-base-300">
+												<button type="button" class="absolute inset-0 z-10" aria-label="Open Note" on:click={() => { noteToEdit = note; isNoteModalOpen = true; }}></button>
+												<NoteCard
 												{note}
 												user={data.user || null}
 												on:edit={(event) => {
@@ -1146,24 +1223,15 @@
 												}}
 												{collection}
 											/>
-										{/each}
-									{/if}
-									{#if dayLodging.length > 0}
-										{#each dayLodging as hotel}
-											<LodgingCard
-												lodging={hotel}
-												user={data?.user}
-												on:delete={(event) => {
-													lodging = lodging.filter((t) => t.id != event.detail);
-												}}
-												on:edit={editLodging}
-												{collection}
-											/>
+											</div>
+											<div class="divider"></div>
 										{/each}
 									{/if}
 									{#if dayChecklists.length > 0}
 										{#each dayChecklists as checklist}
-											<ChecklistCard
+                                    <div class="relative py-3 border-b border-base-300">
+												<button type="button" class="absolute inset-0 z-10" aria-label="Open Checklist" on:click={() => { checklistToEdit = checklist; isShowingChecklistModal = true; }}></button>
+												<ChecklistCard
 												{checklist}
 												user={data.user || null}
 												on:delete={(event) => {
@@ -1175,12 +1243,14 @@
 												}}
 												{collection}
 											/>
+											</div>
+											<div class="divider"></div>
 										{/each}
 									{/if}
 								</div>
 
 								{#if dayAdventures.length == 0 && dayTransportations.length == 0 && dayNotes.length == 0 && dayChecklists.length == 0 && dayLodging.length == 0}
-									<p class="text-center text-lg mt-2 italic">{$t('adventures.nothing_planned')}</p>
+									<p class="text-lg mt-2 italic">{$t('adventures.nothing_planned')}</p>
 								{/if}
 							</div>
 						</div>
@@ -1654,3 +1724,20 @@
 			: 'your adventures.'}"
 	/>
 </svelte:head>
+
+<style>
+  /* Make cards full width within the day stack on this page */
+  .day-stack :global(.card) {
+    max-width: 100% !important;
+    width: 100% !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: 0 !important;
+    padding: 0 !important;
+  }
+  /* Hide any neutral/base open buttons inside cards on this page */
+  .day-stack :global(.btn.btn-neutral),
+  .day-stack :global(.btn.btn-base-300) {
+    display: none !important;
+  }
+</style>

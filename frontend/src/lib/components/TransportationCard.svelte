@@ -14,10 +14,7 @@
 		isEntityOutsideCollectionDateRange
 	} from '$lib/dateUtils';
 	import { isAllDay } from '$lib';
-	import CardCarousel from './CardCarousel.svelte';
 
-	import Eye from '~icons/mdi/eye';
-	import EyeOff from '~icons/mdi/eye-off';
 
 	function getTransportationIcon(type: string) {
 		if (type in TRANSPORTATION_TYPES_ICONS) {
@@ -76,145 +73,65 @@
 	/>
 {/if}
 
-<div
-	class="card w-full max-w-md bg-base-300 text-base-content shadow-2xl hover:shadow-3xl transition-all duration-300 border border-base-300 hover:border-primary/20 group"
->
-	<!-- Image Section with Overlay -->
-	<div class="relative overflow-hidden rounded-t-2xl">
-		<CardCarousel
-			images={transportation.images}
-			icon={getTransportationIcon(transportation.type)}
-			name={transportation.name}
-		/>
-
-		<!-- Privacy Indicator -->
-		<div class="absolute top-4 right-4">
-			<div
-				class="tooltip tooltip-left"
-				data-tip={transportation.is_public ? $t('adventures.public') : $t('adventures.private')}
-			>
-				<div
-					class="btn btn-circle btn-sm btn-ghost bg-black/20 backdrop-blur-sm border-0 text-white"
-				>
-					{#if transportation.is_public}
-						<Eye class="w-4 h-4" />
+<div class="card w-full max-w-md bg-base-300 text-base-content shadow-2xl transition-all duration-300 border border-base-300 hover:border-primary/20 group p-4">
+	<!-- Row 1: image | title/badges | detail -->
+	<div class="grid grid-cols-[auto,1fr,auto] items-center gap-3">
+		<!-- Small circular image/icon -->
+		<div class="flex items-center">
+			<div class="avatar">
+				<div class="w-12 h-12 rounded-full ring-1 ring-base-200 overflow-hidden">
+					{#if transportation.images && transportation.images.length > 0}
+						<img src={transportation.images[0]} alt={transportation.name} class="object-cover w-12 h-12" />
 					{:else}
-						<EyeOff class="w-4 h-4" />
+						<div class="w-12 h-12 flex items-center justify-center text-xl bg-base-200">{getTransportationIcon(transportation.type)}</div>
 					{/if}
 				</div>
 			</div>
 		</div>
 
-		<!-- Category Badge -->
-		{#if transportation.type}
-			<div class="absolute bottom-4 left-4">
-				<div class="badge badge-primary shadow-lg font-medium">
-					{$t(`transportation.modes.${transportation.type}`)}
-					{getTransportationIcon(transportation.type)}
-				</div>
-			</div>
-		{/if}
-	</div>
-
-	<div class="card-body p-6 space-y-6">
-		<!-- Header -->
-		<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-			<h2 class="text-xl font-bold truncate">{transportation.name}</h2>
-			<div class="flex flex-wrap gap-2">
-				<div class="badge badge-secondary">
-					{$t(`transportation.modes.${transportation.type}`)}
-					{getTransportationIcon(transportation.type)}
-				</div>
+		<!-- Title + badges -->
+		<div class="col-span-1 col-start-2 text-left">
+			<h2 class="font-semibold truncate">{transportation.name}</h2>
+			<div class="mt-1 flex flex-wrap gap-1">
+				<div class="badge badge-sm badge-secondary">{$t(`transportation.modes.${transportation.type}`)} {getTransportationIcon(transportation.type)}</div>
 				{#if transportation.type === 'plane' && transportation.flight_number}
-					<div class="badge badge-neutral">{transportation.flight_number}</div>
+					<div class="badge badge-sm badge-neutral">{transportation.flight_number}</div>
 				{/if}
 				{#if outsideCollectionRange}
-					<div class="badge badge-error">{$t('adventures.out_of_range')}</div>
+					<div class="badge badge-sm badge-error">{$t('adventures.out_of_range')}</div>
 				{/if}
 			</div>
 		</div>
 
-		<!-- Route Info -->
-		<div class="space-y-3">
-			{#if transportation.from_location}
-				<div class="flex gap-2 text-sm">
-					<span class="font-medium whitespace-nowrap">{$t('adventures.from')}:</span>
-					<span class="break-words">{transportation.from_location}</span>
-				</div>
-			{/if}
-
-			{#if transportation.to_location}
-				<div class="flex gap-2 text-sm">
-					<span class="font-medium whitespace-nowrap">{$t('adventures.to')}:</span>
-					<span class="break-words">{transportation.to_location}</span>
-				</div>
-			{/if}
-
-			{#if transportation.distance && !isNaN(+transportation.distance)}
-				<div class="flex gap-2 text-sm">
-					<span class="font-medium whitespace-nowrap">{$t('adventures.distance')}:</span>
-					<span>
-						{(+transportation.distance).toFixed(1)} km / {toMiles(transportation.distance)} mi
-					</span>
-				</div>
-			{/if}
-		</div>
-
-		<!-- Time Info -->
-		<div class="space-y-3">
+		<!-- Single detail: start date/time -->
+		<div class="col-span-1 text-right text-sm">
 			{#if transportation.date}
-				<div class="flex gap-2 text-sm">
-					<span class="font-medium whitespace-nowrap">{$t('adventures.start')}:</span>
-					<span>
-						{#if isAllDay(transportation.date) && (!transportation.end_date || isAllDay(transportation.end_date))}
-							{formatAllDayDate(transportation.date)}
-						{:else}
-							{formatDateInTimezone(transportation.date, transportation.start_timezone)}
-							{#if transportation.start_timezone}
-								<span class="ml-1 text-xs opacity-60">({transportation.start_timezone})</span>
-							{/if}
+				<span>
+					{#if isAllDay(transportation.date) && (!transportation.end_date || isAllDay(transportation.end_date))}
+						{formatAllDayDate(transportation.date)}
+					{:else}
+						{formatDateInTimezone(transportation.date, transportation.start_timezone)}
+						{#if transportation.start_timezone}
+							<span class="ml-1 text-xs opacity-60">({transportation.start_timezone})</span>
 						{/if}
-					</span>
-				</div>
-			{/if}
-
-			{#if transportation.end_date}
-				<div class="flex gap-2 text-sm">
-					<span class="font-medium whitespace-nowrap">{$t('adventures.end')}:</span>
-					<span>
-						{#if isAllDay(transportation.end_date) && (!transportation.date || isAllDay(transportation.date))}
-							{formatAllDayDate(transportation.end_date)}
-						{:else}
-							{formatDateInTimezone(transportation.end_date, transportation.end_timezone)}
-							{#if transportation.end_timezone}
-								<span class="ml-1 text-xs opacity-60">({transportation.end_timezone})</span>
-							{/if}
-						{/if}
-					</span>
-				</div>
+					{/if}
+				</span>
 			{/if}
 		</div>
-
-		<!-- Actions -->
-		{#if transportation.user === user?.uuid || (collection && user && collection.shared_with?.includes(user.uuid))}
-			<div class="pt-4 border-t border-base-300 flex justify-end gap-2">
-				<button
-					class="btn btn-neutral btn-sm flex items-center gap-1"
-					on:click={editTransportation}
-					title={$t('transportation.edit')}
-				>
-					<FileDocumentEdit class="w-5 h-5" />
-					<span>{$t('transportation.edit')}</span>
-				</button>
-				<button
-					class="btn btn-secondary btn-sm flex items-center gap-1"
-					on:click={() => (isWarningModalOpen = true)}
-					title={$t('adventures.delete')}
-				>
-					<TrashCanOutline class="w-5 h-5" />
-					<span>{$t('adventures.delete')}</span>
-				</button>
-			</div>
-		{/if}
 	</div>
+
+	<!-- Row 2: actions -->
+	{#if transportation.user === user?.uuid || (collection && user && collection.shared_with?.includes(user.uuid))}
+		<div class="mt-3 pt-3 border-t border-base-300 flex items-center justify-between gap-2">
+			<button class="btn btn-neutral btn-sm flex items-center gap-1" on:click={editTransportation} title={$t('transportation.edit')}>
+				<FileDocumentEdit class="w-5 h-5" />
+				<span class="hidden sm:inline">{$t('transportation.edit')}</span>
+			</button>
+			<div class="flex-1"></div>
+			<button class="btn btn-secondary btn-sm flex items-center gap-1" on:click={() => (isWarningModalOpen = true)} title={$t('adventures.delete')}>
+				<TrashCanOutline class="w-5 h-5" />
+				<span class="hidden sm:inline">{$t('adventures.delete')}</span>
+			</button>
+		</div>
+	{/if}
 </div>
